@@ -29,6 +29,13 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("DATABASE_URL", "database_url"),
     )
 
+    admin_username: str = Field(default="admin", validation_alias=AliasChoices("ADMIN_USERNAME", "admin_username"))
+    admin_password: str = Field(default="change-me", validation_alias=AliasChoices("ADMIN_PASSWORD", "admin_password"))
+    jwt_secret_key: str = Field(default="change-me-local-secret", validation_alias=AliasChoices("JWT_SECRET_KEY", "jwt_secret_key"))
+    jwt_algorithm: str = Field(default="HS256", validation_alias=AliasChoices("JWT_ALGORITHM", "jwt_algorithm"))
+    jwt_expire_minutes: int = Field(default=720, validation_alias=AliasChoices("JWT_EXPIRE_MINUTES", "jwt_expire_minutes"))
+    cors_origins: str = Field(default="http://127.0.0.1:5173,http://localhost:5173", validation_alias=AliasChoices("CORS_ORIGINS", "cors_origins"))
+
     @property
     def database_url(self) -> str:
         if self.database_url_override:
@@ -42,6 +49,10 @@ class Settings(BaseSettings):
             f"postgresql+psycopg://{auth}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
         )
+
+    @property
+    def cors_origin_list(self) -> list[str]:
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
 
 @lru_cache(maxsize=1)

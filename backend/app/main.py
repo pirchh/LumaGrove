@@ -2,12 +2,20 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import asynccontextmanager, suppress
+from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
+from app.api.dependencies import require_admin
+from app.api.routes.admin_assets import router as admin_assets_router
+from app.api.routes.admin_content import router as admin_content_router
+from app.api.routes.auth import router as auth_router
 from app.api.routes.devices import router as devices_router
 from app.api.routes.event_logs import router as event_logs_router
 from app.api.routes.health import router as health_router
+from app.api.routes.public_content import router as public_content_router
 from app.api.routes.schedules import router as schedules_router
 from app.core.config import settings
 from app.core.logging import configure_logging, get_logger
@@ -19,6 +27,9 @@ logger = get_logger(__name__)
 
 SCHEDULER_INTERVAL_SECONDS = 10.0
 SCHEDULER_BATCH_SIZE = 25
+MEDIA_ROOT = Path(__file__).resolve().parents[1] / "media"
+MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
+(MEDIA_ROOT / "uploads").mkdir(parents=True, exist_ok=True)
 
 
 @asynccontextmanager
@@ -69,7 +80,23 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origin_list,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.mount("/media", StaticFiles(directory=MEDIA_ROOT), name="media")
+
 app.include_router(health_router)
-app.include_router(devices_router)
-app.include_router(event_logs_router)
-app.include_router(schedules_router)
+app.include_router(auth_router)
+app.include_router(public_content_router)
+
+# Admin/control-plane APIs are protected by the single-owner auth layer.
+app.include_router(devices_router, dependencies=[Depends(require_admin)])
+app.include_router(event_logs_router, dependencies=[Depends(require_admin)])
+app.include_router(schedules_router, dependencies=[Depends(require_admin)])
+app.include_router(admin_content_router, dependencies=[Depends(require_admin)])
+app.include_router(admin_assets_router, dependencies=[Depends(require_admin)])

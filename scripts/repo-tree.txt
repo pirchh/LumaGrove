@@ -1,0 +1,31 @@
+lumagrove/
+├── .gitignore
+├── README.md
+├── docs/
+│   ├── architecture.md
+│   ├── phase-0-checklist.md
+│   └── phase-1-checklist.md
+├── frontend/
+│   └── .env.example
+└── backend/
+    ├── .env.example
+    ├── requirements.txt
+    ├── alembic.ini
+    ├── alembic/
+    │   ├── env.py
+    │   ├── script.py.mako
+    │   └── versions/
+    └── app/
+        ├── main.py
+        ├── api/
+        │   └── routes/
+        │       └── health.py
+        ├── core/
+        │   ├── config.py
+        │   ├── logging.py
+        │   └── time.py
+        └── db/
+            ├── base.py
+            ├── session.py
+            └── models/
+                └── __init__.py
